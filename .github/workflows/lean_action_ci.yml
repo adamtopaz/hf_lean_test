@@ -54,4 +54,3 @@ jobs:
             --repo-type dataset \
             --private \
             --commit-message "Update dataset from ${{ github.sha }}" \
-            --revision "${{ github.sha }}"
