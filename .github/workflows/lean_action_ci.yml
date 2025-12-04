@@ -35,16 +35,6 @@ jobs:
           fi
           echo "Successfully authenticated with HuggingFace"
 
-      - name: Get HF username
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: hf-user
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          username=$(uvx hf auth whoami | grep -oP 'User:\s*\K\S+' | tr -d '\n\r')
-          echo "Extracted username: '$username'"
-          echo "username=$username" >> "$GITHUB_OUTPUT"
-
       - name: Create temp directory
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: tempdir
@@ -75,10 +65,8 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          REPO_ID="${{ steps.hf-user.outputs.username }}/${{ env.HF_DATASET_NAME }}"
-          echo "Uploading to repo: '$REPO_ID'"
           uvx hf upload \
-            "$REPO_ID" \
+            "${{ env.HF_DATASET_NAME }}" \
             "${{ steps.tempdir.outputs.path }}" \
             --repo-type dataset \
             --private \
