@@ -57,7 +57,7 @@ jobs:
             echo "::error::No parquet files were generated"
             exit 1
           fi
-          echo "Generated parquet files:"
+          echo "Generated data:"
           ls -lh "${{ steps.tempdir.outputs.path }}"/*.parquet
 
       - name: Upload to HuggingFace Hub
