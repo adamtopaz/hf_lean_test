@@ -57,7 +57,7 @@ jobs:
             | bash -s -- \
                 --command types \
                 --parquet \
-                --outDir "${{ steps.tempdir.outputs.path }}" \
+                --dataDir "${{ steps.tempdir.outputs.path }}" \
                 --imports Lean
 
       - name: Verify parquet files exist
