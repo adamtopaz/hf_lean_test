@@ -1,8 +1,9 @@
-name: Lean Action CI
+name: Upload Lean dataset to HuggingFace Hub
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -20,38 +21,21 @@ jobs:
       - uses: leanprover/lean-action@v1
 
       - name: Install uv
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: astral-sh/setup-uv@v4
 
-      - name: Verify HF authentication
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          AUTH_OUTPUT=$(uvx hf auth whoami 2>&1)
-          if echo "$AUTH_OUTPUT" | grep -q "Not logged in"; then
-            echo "::error::HuggingFace authentication failed. Please ensure HF_TOKEN secret is set and valid."
-            exit 1
-          fi
-          echo "Successfully authenticated with HuggingFace"
-
       - name: Create temp directory
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: tempdir
         run: echo "path=$(mktemp -d)" >> "$GITHUB_OUTPUT"
 
       - name: Generate parquet files
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          curl -fsSL https://raw.githubusercontent.com/mathlib-initiative/lean_scout/main/extract.sh \
-            | bash -s -- \
-                --command types \
-                --parquet \
-                --dataDir "${{ steps.tempdir.outputs.path }}" \
-                --imports Lean
+          curl -fsSL mathlib-initiative.github.io/lean_scout/extract.sh | bash -s -- \
+            --command types \
+            --parquet \
+            --dataDir "${{ steps.tempdir.outputs.path }}" \
+            --imports Lean
 
       - name: Verify parquet files exist
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           if ! ls "${{ steps.tempdir.outputs.path }}"/*.parquet 1>/dev/null 2>&1; then
             echo "::error::No parquet files were generated"
@@ -61,7 +45,6 @@ jobs:
           ls -lh "${{ steps.tempdir.outputs.path }}"/*.parquet
 
       - name: Upload to HuggingFace Hub
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -70,4 +53,5 @@ jobs:
             "${{ steps.tempdir.outputs.path }}" \
             --repo-type dataset \
             --private \
-            --commit-message "Update dataset from ${{ github.sha }}"
+            --commit-message "Update dataset from ${{ github.sha }}" \
+            --revision "${{ github.sha }}"
