@@ -1,7 +1,9 @@
 name: Upload to HuggingFace Hub
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Lean Action CI"]
+    types: [completed]
     branches: [main]
 
 concurrency:
@@ -17,6 +19,7 @@ env:
 jobs:
   upload:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Checkout repository
@@ -40,7 +43,9 @@ jobs:
         id: hf-user
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: echo "username=$(uvx hf auth whoami | awk -F: '{print $2}' | tr -d ' ')" >> "$GITHUB_OUTPUT"
+        run: |
+          username=$(uvx hf auth whoami | awk -F: '{print $2}' | tr -d ' ')
+          echo "username=$username" >> "$GITHUB_OUTPUT"
 
       - name: Create temp directory
         id: tempdir
